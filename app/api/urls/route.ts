@@ -1,17 +1,9 @@
-import { apiBase } from "@/lib/urls";
+import { proxy, forwardAuth } from "@/lib/proxy";
 
-async function proxy(path: string, init?: RequestInit) {
-  try {
-    const res = await fetch(`${apiBase()}${path}`, init);
-    const data = await res.json().catch(() => null);
-    return Response.json(data, { status: res.status });
-  } catch {
-    return Response.json({ error: "backend unreachable" }, { status: 503 });
-  }
-}
-
-export function GET() {
-  return proxy("/short-urls");
+export function GET(request: Request) {
+  return proxy("/short-urls/my", {
+    headers: forwardAuth(request),
+  });
 }
 
 export function POST(request: Request) {
@@ -21,7 +13,7 @@ export function POST(request: Request) {
     .then((body) =>
       proxy("/short-urls", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...forwardAuth(request) },
         body: JSON.stringify(body),
       }),
     );

@@ -1,7 +1,9 @@
 import { config } from "@/lib/config";
+import { authHeaders } from "@/lib/auth";
 
 export type ShortUrl = {
   id: string;
+  userId: string;
   shortCode: string;
   originalUrl: string;
   visitCount: number;
@@ -26,7 +28,7 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
 export async function createShortUrl(originalUrl: string): Promise<ShortUrl> {
   const res = await fetch("/api/urls", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ originalUrl }),
   });
   if (!res.ok) {
@@ -36,7 +38,7 @@ export async function createShortUrl(originalUrl: string): Promise<ShortUrl> {
 }
 
 export async function listShortUrls(): Promise<ShortUrl[]> {
-  const res = await fetch("/api/urls");
+  const res = await fetch("/api/urls", { headers: authHeaders() });
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not load links."));
   }

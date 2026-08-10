@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "urlo - short links",
   description:
-    "Paste a long URL and get a short link you can share anywhere. No accounts, no clutter.",
+    "Paste a long URL and get a short link you can share anywhere.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

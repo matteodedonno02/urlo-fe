@@ -8,6 +8,8 @@ import {
   shortUrlFor,
   type ShortUrl,
 } from "@/lib/urls";
+import type { AuthUser } from "@/lib/auth";
+import { AuthForm } from "@/components/auth-form";
 
 function normalizeUrl(raw: string): string {
   const trimmed = raw.trim();
@@ -56,7 +58,13 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
-export function ShortenPanel() {
+export function ShortenPanel({
+  user,
+  onUserChange,
+}: {
+  user: AuthUser | null;
+  onUserChange: (user: AuthUser) => void;
+}) {
   const [value, setValue] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,43 +129,48 @@ export function ShortenPanel() {
           Short links, nothing else.
         </h1>
         <p className="mt-5 max-w-[55ch] text-base leading-relaxed text-muted md:text-lg">
-          Paste a long URL and get a short link you can share anywhere. No
-          accounts, no ads, no clutter.
+          Paste a long URL and get a short link you can share anywhere.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-10 max-w-2xl" noValidate>
-          <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-            <label htmlFor="url-input" className="sr-only">
-              Link to shorten
-            </label>
-            <input
-              id="url-input"
-              type="text"
-              inputMode="url"
-              autoComplete="off"
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="https://example.com/some/very/long/path"
-              className="h-12 flex-1 rounded-xl border border-line bg-surface px-4 font-mono text-sm text-foreground placeholder:text-muted focus:border-accent-link focus:outline-none focus:ring-2 focus:ring-accent-soft"
-            />
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 font-medium text-accent-ink transition-colors hover:brightness-110 active:translate-y-px disabled:opacity-60"
-            >
-              {pending ? (
-                <SpinnerGap size={16} className="animate-spin" />
-              ) : (
-                <ArrowRight size={16} weight="bold" />
-              )}
-              {pending ? "shortening" : "shorten"}
-            </button>
+        {user ? (
+          <form onSubmit={onSubmit} className="mt-10 max-w-2xl" noValidate>
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+              <label htmlFor="url-input" className="sr-only">
+                Link to shorten
+              </label>
+              <input
+                id="url-input"
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                autoFocus
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="https://example.com/some/very/long/path"
+                className="h-12 flex-1 rounded-xl border border-line bg-surface px-4 font-mono text-sm text-foreground placeholder:text-muted focus:border-accent-link focus:outline-none focus:ring-2 focus:ring-accent-soft"
+              />
+              <button
+                type="submit"
+                disabled={pending}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 font-medium text-accent-ink transition-colors hover:brightness-110 active:translate-y-px disabled:opacity-60"
+              >
+                {pending ? (
+                  <SpinnerGap size={16} className="animate-spin" />
+                ) : (
+                  <ArrowRight size={16} weight="bold" />
+                )}
+                {pending ? "shortening" : "shorten"}
+              </button>
+            </div>
+            {error && (
+              <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+            )}
+          </form>
+        ) : (
+          <div className="mt-10">
+            <AuthForm onUserChange={onUserChange} />
           </div>
-          {error && (
-            <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
-          )}
-        </form>
+        )}
       </section>
 
       {result && (
@@ -182,7 +195,8 @@ export function ShortenPanel() {
         </section>
       )}
 
-      <section className="pb-24 pt-16 md:pt-20">
+      {user && (
+        <section className="pb-24 pt-16 md:pt-20">
         <div className="mb-4 flex items-center gap-2">
           <Clock size={15} weight="regular" className="text-muted" />
           <h2 className="text-sm font-medium tracking-tight">Recent links</h2>
@@ -242,6 +256,7 @@ export function ShortenPanel() {
           </ul>
         )}
       </section>
+      )}
     </div>
   );
 }
