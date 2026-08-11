@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { SignOut } from "@phosphor-icons/react";
+import { ShieldCheck, SignOut } from "@phosphor-icons/react";
 import { ShortenPanel } from "@/components/shorten-panel";
 import { fetchProfile, getToken, logout, type AuthUser } from "@/lib/auth";
 
@@ -26,6 +26,15 @@ export function Home() {
           {user ? (
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-muted">{user.email}</span>
+              {user.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 font-mono text-xs text-foreground transition-colors hover:border-accent-link hover:text-accent-link active:translate-y-px"
+                >
+                  <ShieldCheck size={13} weight="regular" />
+                  admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => {

@@ -1,6 +1,7 @@
 export type AuthUser = {
   id: string;
   email: string;
+  role: "standard" | "admin";
 };
 
 const TOKEN_KEY = "urlo_token";
@@ -58,7 +59,11 @@ export async function fetchProfile(): Promise<AuthUser> {
     throw new Error(await errorMessage(res, "Session expired."));
   }
   const data = await res.json();
-  return { id: data.sub, email: data.email };
+  return {
+    id: data.sub,
+    email: data.email,
+    role: data.role === "admin" ? "admin" : "standard",
+  };
 }
 
 export function logout(): void {
