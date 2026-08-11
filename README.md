@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <img src="public/web-app-manifest-512x512.png" alt="urlo logo" width="120" />
+</p>
 
-## Getting Started
+# urlo-fe
 
-First, run the development server:
+## Description
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Frontend for urlo, built with [Next.js](https://nextjs.org/) (App Router), React 19, and TypeScript.
+
+**Current status: initial feature set live.** The application boots with:
+
+- **Config** — typed runtime configuration in `lib/config.ts` (host, port, backend API base URL).
+- **Backend proxy** — client-side calls are served by Next.js route handlers in `app/api/` that proxy to urlo-be and forward the `Authorization` header (`lib/proxy.ts`).
+- **Auth** — `register`, `login`, and `profile` flows via `/api/auth/*`, with the JWT stored in `localStorage`.
+- **Shorten panel** — paste a long URL to get a short link, copy it to the clipboard, and browse your recent links with visit counts.
+- **Redirects** — `app/s/[code]` resolves a short code and 302-redirects to the original URL.
+- **Admin dashboard** — `/admin` lists every account with role badges, search, stats, and per-user short links. Access is guarded for `admin` roles, and seeded admins are forced to rotate their password on first login.
+
+## Pages
+
+| Route | Description |
+| ----- | ----------- |
+| `/` | Home — shorten panel, auth |
+| `/admin` | Admin dashboard |
+| `/s/[code]` | Short-code redirect |
+
+## API proxy overview
+
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/profile` (protected)
+- `POST /api/urls`, `GET /api/urls` (my short links)
+- `GET /api/admin/users`, `GET /api/admin/users/:id/short-urls`, `PATCH /api/admin/password` (admin)
+
+## Project structure
+
+```text
+app/
+  layout.tsx            # root layout, Geist fonts, metadata
+  page.tsx              # home page
+  admin/page.tsx        # admin dashboard
+  s/[code]/route.ts     # short-code redirect
+  api/                  # route handlers proxying to urlo-be
+    auth/               # register, login, profile
+    urls/               # shorten + my links
+    admin/              # users, short links, password
+components/             # client components (auth form, shorten panel, admin, ...)
+lib/                    # config, auth, urls, admin, proxy helpers
+public/                 # static assets, manifest icons
+scripts/start.mjs       # dev/start launcher binding host + port
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+$ npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Point `apiBaseUrl` in `lib/config.ts` at your running urlo-be instance.
 
-## Learn More
+## Compile and run the project
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# development
+$ npm run dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# production build
+$ npm run build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# production mode
+$ npm start
+```
 
-## Deploy on Vercel
+## Lint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+$ npm run lint
+```
