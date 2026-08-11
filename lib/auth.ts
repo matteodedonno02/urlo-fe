@@ -5,6 +5,7 @@ export type AuthUser = {
 };
 
 const TOKEN_KEY = "urlo_token";
+const MUST_CHANGE_KEY = "urlo_must_change_password";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -17,6 +18,15 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   window.localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getMustChangePassword(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(MUST_CHANGE_KEY) === "1";
+}
+
+export function clearMustChangePassword(): void {
+  window.localStorage.removeItem(MUST_CHANGE_KEY);
 }
 
 export function authHeaders(): Record<string, string> {
@@ -40,7 +50,10 @@ export async function register(email: string, password: string): Promise<void> {
   }
 }
 
-export async function login(email: string, password: string): Promise<void> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ mustChangePassword: boolean }> {
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -51,6 +64,27 @@ export async function login(email: string, password: string): Promise<void> {
   }
   const data = await res.json();
   setToken(data.access_token);
+  if (data.mustChangePassword) {
+    window.localStorage.setItem(MUST_CHANGE_KEY, "1");
+  } else {
+    window.localStorage.removeItem(MUST_CHANGE_KEY);
+  }
+  return { mustChangePassword: Boolean(data.mustChangePassword) };
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch("/api/admin/password", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) {
+    throw new Error(await errorMessage(res, "Could not update password."));
+  }
+  clearMustChangePassword();
 }
 
 export async function fetchProfile(): Promise<AuthUser> {

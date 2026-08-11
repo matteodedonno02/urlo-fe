@@ -4,10 +4,19 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ShieldCheck, SignOut } from "@phosphor-icons/react";
 import { ShortenPanel } from "@/components/shorten-panel";
-import { fetchProfile, getToken, logout, type AuthUser } from "@/lib/auth";
+import { ChangePasswordModal } from "@/components/change-password-modal";
+import {
+  fetchProfile,
+  getMustChangePassword,
+  getToken,
+  logout,
+  type AuthUser,
+} from "@/lib/auth";
 
 export function Home() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [mustChange, setMustChange] = useState(false);
+  const [prevUser, setPrevUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     if (!getToken()) return;
@@ -15,6 +24,11 @@ export function Home() {
       .then(setUser)
       .catch(() => logout());
   }, []);
+
+  if (prevUser !== user) {
+    setPrevUser(user);
+    setMustChange(Boolean(user?.role === "admin" && getMustChangePassword()));
+  }
 
   return (
     <main className="min-h-[100dvh] flex-1 flex flex-col">
@@ -61,6 +75,10 @@ export function Home() {
           <span className="text-xs text-muted">paste long. share short.</span>
         </div>
       </footer>
+
+      {mustChange && user && (
+        <ChangePasswordModal onDone={() => setMustChange(false)} />
+      )}
     </main>
   );
 }

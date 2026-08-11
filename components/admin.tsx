@@ -13,7 +13,8 @@ import {
   SignIn,
   Users,
 } from "@phosphor-icons/react";
-import { fetchProfile, logout, type AuthUser } from "@/lib/auth";
+import { ChangePasswordModal } from "@/components/change-password-modal";
+import { fetchProfile, getMustChangePassword, logout, type AuthUser } from "@/lib/auth";
 import {
   listUserShortUrls,
   listUsers,
@@ -90,6 +91,8 @@ export function AdminDashboard() {
     "booting",
   );
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [mustChange, setMustChange] = useState(false);
+  const [prevUser, setPrevUser] = useState<AuthUser | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -127,6 +130,11 @@ export function AdminDashboard() {
       cancelled = true;
     };
   }, []);
+
+  if (prevUser !== user) {
+    setPrevUser(user);
+    setMustChange(Boolean(user?.role === "admin" && getMustChangePassword()));
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -405,6 +413,10 @@ export function AdminDashboard() {
           <span className="text-xs text-muted">admin dashboard</span>
         </div>
       </footer>
+
+      {mustChange && user && (
+        <ChangePasswordModal onDone={() => setMustChange(false)} />
+      )}
     </main>
   );
 }
