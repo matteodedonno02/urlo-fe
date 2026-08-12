@@ -1,5 +1,5 @@
 import { config } from "@/lib/config";
-import { authHeaders } from "@/lib/auth";
+import { authFetch } from "@/lib/auth";
 
 export type ShortUrl = {
   id: string;
@@ -56,9 +56,9 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
 }
 
 export async function createShortUrl(originalUrl: string): Promise<ShortUrl> {
-  const res = await fetch("/api/urls", {
+  const res = await authFetch("/api/urls", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ originalUrl }),
   });
   if (!res.ok) {
@@ -82,9 +82,7 @@ export async function listMyShortUrls(params?: {
   if (params?.cursor) search.set("cursor", params.cursor);
   if (params?.q) search.set("q", params.q);
   const qs = search.toString();
-  const res = await fetch(`/api/urls/my${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(),
-  });
+  const res = await authFetch(`/api/urls/my${qs ? `?${qs}` : ""}`);
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not load your links."));
   }
@@ -95,9 +93,9 @@ export async function updateShortUrlOriginalUrl(
   id: string,
   originalUrl: string,
 ): Promise<ShortUrl> {
-  const res = await fetch(`/api/urls/${id}/original-url`, {
+  const res = await authFetch(`/api/urls/${id}/original-url`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ originalUrl }),
   });
   if (!res.ok) {

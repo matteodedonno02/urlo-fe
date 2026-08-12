@@ -12,7 +12,7 @@ Frontend for urlo, built with [Next.js](https://nextjs.org/) (App Router), React
 
 - **Config** — typed runtime configuration in `lib/config.ts` (host, port, backend API base URL).
 - **Backend proxy** — client-side calls are served by Next.js route handlers in `app/api/` that proxy to urlo-be and forward the `Authorization` header (`lib/proxy.ts`).
-- **Auth** — `register`, `login`, and `profile` flows via `/api/auth/*`, with the JWT stored in `localStorage`.
+- **Auth** — `register`, `login`, `profile`, `refresh`, and `logout` flows via `/api/auth/*`. The access token and its opaque refresh token are kept in `localStorage`; requests retry with a freshly rotated pair when the access token expires.
 - **Shorten panel** — paste a long URL to get a short link, copy it to the clipboard, and browse your recent links with visit counts.
 - **Redirects** — `app/s/[code]` resolves a short code and 302-redirects to the original URL.
 - **Admin dashboard** — `/admin` lists every account with role badges, search, stats, and per-user short links. Access is guarded for `admin` roles, and seeded admins are forced to rotate their password on first login.
@@ -29,7 +29,7 @@ Frontend for urlo, built with [Next.js](https://nextjs.org/) (App Router), React
 
 ## API proxy overview
 
-- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/profile` (protected)
+- `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/profile` (protected)
 - `POST /api/urls`, `GET /api/urls` (my short links)
 - `GET /api/urls/my` (paginated my links: `limit`, `cursor`, `q`)
 - `PATCH /api/urls/:id/original-url` (edit a link you own)
@@ -45,7 +45,7 @@ app/
   admin/page.tsx        # admin dashboard
   s/[code]/route.ts     # short-code redirect
   api/                  # route handlers proxying to urlo-be
-    auth/               # register, login, profile
+    auth/               # register, login, refresh, logout, profile
     urls/               # shorten + my links (+ paginated my, edit original url)
     admin/              # users, short links, password
 components/             # client components (auth form, shorten panel, admin, ...)

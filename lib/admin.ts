@@ -1,4 +1,4 @@
-import { authHeaders } from "@/lib/auth";
+import { authFetch } from "@/lib/auth";
 
 export type AdminUser = {
   id: string;
@@ -25,7 +25,7 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
 }
 
 export async function listUsers(): Promise<AdminUser[]> {
-  const res = await fetch("/api/admin/users", { headers: authHeaders() });
+  const res = await authFetch("/api/admin/users");
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not load users."));
   }
@@ -33,7 +33,7 @@ export async function listUsers(): Promise<AdminUser[]> {
 }
 
 export async function getUser(id: string): Promise<AdminUser> {
-  const res = await fetch(`/api/admin/users/${id}`, { headers: authHeaders() });
+  const res = await authFetch(`/api/admin/users/${id}`);
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not load this user."));
   }
@@ -41,9 +41,7 @@ export async function getUser(id: string): Promise<AdminUser> {
 }
 
 export async function listUserShortUrls(id: string): Promise<AdminShortUrl[]> {
-  const res = await fetch(`/api/admin/users/${id}/short-urls`, {
-    headers: authHeaders(),
-  });
+  const res = await authFetch(`/api/admin/users/${id}/short-urls`);
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not load this user's links."));
   }

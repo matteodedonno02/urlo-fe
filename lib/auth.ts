@@ -5,6 +5,7 @@ export type AuthUser = {
 };
 
 const TOKEN_KEY = "urlo_token";
+const REFRESH_TOKEN_KEY = "urlo_refresh_token";
 const MUST_CHANGE_KEY = "urlo_must_change_password";
 
 export function getToken(): string | null {
@@ -12,12 +13,19 @@ export function getToken(): string | null {
   return window.localStorage.getItem(TOKEN_KEY);
 }
 
-export function setToken(token: string): void {
-  window.localStorage.setItem(TOKEN_KEY, token);
+function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-export function clearToken(): void {
+function setTokens(accessToken: string, refreshToken: string): void {
+  window.localStorage.setItem(TOKEN_KEY, accessToken);
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+function clearTokens(): void {
   window.localStorage.removeItem(TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function getMustChangePassword(): boolean {
@@ -29,14 +37,55 @@ export function clearMustChangePassword(): void {
   window.localStorage.removeItem(MUST_CHANGE_KEY);
 }
 
-export function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function errorMessage(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => null);
   return body?.message ?? fallback;
+}
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+export async function refreshSession(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch("/api/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!res.ok) {
+          clearTokens();
+          return false;
+        }
+        const data = await res.json();
+        setTokens(data.access_token, data.refresh_token);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
+export async function authFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const res = await fetch(input, { ...init, headers });
+  if (res.status !== 401 || !(await refreshSession())) return res;
+
+  const fresh = getToken();
+  if (fresh) headers.set("Authorization", `Bearer ${fresh}`);
+  return fetch(input, { ...init, headers });
 }
 
 export async function register(email: string, password: string): Promise<void> {
@@ -63,7 +112,7 @@ export async function login(
     throw new Error(await errorMessage(res, "Invalid email or password."));
   }
   const data = await res.json();
-  setToken(data.access_token);
+  setTokens(data.access_token, data.refresh_token);
   if (data.mustChangePassword) {
     window.localStorage.setItem(MUST_CHANGE_KEY, "1");
   } else {
@@ -76,9 +125,9 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const res = await fetch("/api/admin/password", {
+  const res = await authFetch("/api/admin/password", {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ currentPassword, newPassword }),
   });
   if (!res.ok) {
@@ -88,7 +137,7 @@ export async function changePassword(
 }
 
 export async function fetchProfile(): Promise<AuthUser> {
-  const res = await fetch("/api/auth/profile", { headers: authHeaders() });
+  const res = await authFetch("/api/auth/profile");
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Session expired."));
   }
@@ -100,6 +149,18 @@ export async function fetchProfile(): Promise<AuthUser> {
   };
 }
 
-export function logout(): void {
-  clearToken();
+export async function logout(): Promise<void> {
+  const refreshToken = getRefreshToken();
+  clearTokens();
+  clearMustChangePassword();
+  if (!refreshToken) return;
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+  } catch {
+    // Best-effort revoke: the local session is already cleared.
+  }
 }
