@@ -1,4 +1,4 @@
-import { config } from "@/lib/config";
+import { config } from "@/configs";
 import { authFetch } from "@/lib/auth";
 
 export type ShortUrl = {

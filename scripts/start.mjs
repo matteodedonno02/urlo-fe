@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { config } from "../lib/config.ts";
+import { config } from "../configs/index.ts";
 
 const [mode, ...extraArgs] = process.argv.slice(2);
 const command = mode === "start" ? "start" : "dev";
