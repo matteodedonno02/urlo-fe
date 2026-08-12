@@ -133,6 +133,10 @@ export async function changePassword(
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Could not update password."));
   }
+  const data = await res.json();
+  if (data.access_token && data.refresh_token) {
+    setTokens(data.access_token, data.refresh_token);
+  }
   clearMustChangePassword();
 }
 
