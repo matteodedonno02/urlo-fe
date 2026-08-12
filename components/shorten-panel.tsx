@@ -1,62 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, Clock, Copy, LinkBreak, SpinnerGap } from "@phosphor-icons/react";
+import { ArrowRight, Clock, LinkBreak, SpinnerGap } from "@phosphor-icons/react";
 import {
   createShortUrl,
+  formatRelative,
+  isValidUrl,
   listShortUrls,
+  normalizeUrl,
   shortUrlFor,
   type ShortUrl,
 } from "@/lib/urls";
 import type { AuthUser } from "@/lib/auth";
 import { AuthForm } from "@/components/auth-form";
-
-function normalizeUrl(raw: string): string {
-  const trimmed = raw.trim();
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
-function isValidUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function formatRelative(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
-function CopyButton({ text, label }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 font-mono text-xs text-foreground transition-colors hover:border-accent-link hover:text-accent-link active:translate-y-px"
-    >
-      {copied ? (
-        <Check size={14} weight="bold" />
-      ) : (
-        <Copy size={14} weight="regular" />
-      )}
-      {label ?? (copied ? "copied" : "copy")}
-    </button>
-  );
-}
+import { CopyButton } from "@/components/copy-button";
 
 export function ShortenPanel({
   user,

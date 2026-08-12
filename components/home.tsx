@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShieldCheck, SignOut } from "@phosphor-icons/react";
+import { LinkSimple, ShieldCheck, SignOut } from "@phosphor-icons/react";
 import { ShortenPanel } from "@/components/shorten-panel";
 import { ChangePasswordModal } from "@/components/change-password-modal";
 import {
@@ -39,7 +39,14 @@ export function Home() {
           </Link>
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-muted">{user.email}</span>
+              <span className="hidden font-mono text-xs text-muted sm:block">{user.email}</span>
+              <Link
+                href="/links"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 font-mono text-xs text-foreground transition-colors hover:border-accent-link hover:text-accent-link active:translate-y-px"
+              >
+                <LinkSimple size={13} weight="regular" />
+                my links
+              </Link>
               {user.role === "admin" && (
                 <Link
                   href="/admin"
